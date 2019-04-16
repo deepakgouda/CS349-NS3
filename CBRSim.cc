@@ -12,6 +12,21 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("CBR Simulation");
 
+void simulateCBR(NodeContainer &nodes, OnOffHelper &onOff, uint64_t start_time, uint64_t stop_time)
+{
+  // uint64_t start_time = 200;
+  // uint64_t stop_time = 1800;
+  onOff.SetAttribute ("DataRate", StringValue ("300Kbps"));
+  onOff.SetAttribute ("StartTime", TimeValue (MilliSeconds (start_time)));
+  onOff.SetAttribute ("StartTime", TimeValue (MilliSeconds (stop_time)));
+  ApplicationContainer cbr;
+  cbr.Add (onOff.Install (nodes.Get (0)));
+
+  // Start CBR
+  cbr.Start (MilliSeconds (start_time));
+  cbr.Stop (MilliSeconds (stop_time));
+}
+
 int main(int argc, char const *argv[])
 {
 	bool trace = false;
@@ -69,18 +84,20 @@ int main(int argc, char const *argv[])
   onOff.SetAttribute ("OnTime",  StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
   onOff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
 
-  // CBR1 :  node 0 -> node 1 : 200ms - 1800 ms
-  uint64_t start_time = 200;
-  uint64_t stop_time = 1800;
-  onOff.SetAttribute ("DataRate", StringValue ("300Kbps"));
-  onOff.SetAttribute ("StartTime", TimeValue (MilliSeconds (start_time)));
-  onOff.SetAttribute ("StartTime", TimeValue (MilliSeconds (stop_time)));
-  ApplicationContainer cbr1;
-  cbr1.Add (onOff.Install (nodes.Get (0)));
-
-  // Start CBR1
-  cbr1.Start (MilliSeconds (start_time));
-  cbr1.Stop (MilliSeconds (stop_time));
+  // CBR1 :  node 0 -> node 1 : 200 ms - 1800 ms
+  simulateCBR(nodes, onOff, 200, 1800);
+  
+  // CBR2 :  node 0 -> node 1 : 400 ms - 1800 ms
+  simulateCBR(nodes, onOff, 400, 1800);
+  
+  // CBR3 :  node 0 -> node 1 : 600 ms - 1200 ms
+  simulateCBR(nodes, onOff, 600, 1200);
+  
+  // CBR4 :  node 0 -> node 1 : 800 ms - 1400 ms
+  simulateCBR(nodes, onOff, 800, 1400);
+  
+  // CBR5 :  node 0 -> node 1 : 1000 ms - 1600 ms
+  simulateCBR(nodes, onOff, 1000, 1600);
 
   // Start Simulator
   Simulator::Stop(MilliSeconds(1800));
