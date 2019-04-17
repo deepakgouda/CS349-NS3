@@ -5,8 +5,8 @@
 #include "ns3/internet-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/network-module.h"
-#include "ns3/packet-sink.h"
 #include "ns3/on-off-helper.h"
+// #include "ns3/packet-sink.h"
 
 using namespace ns3;
 
@@ -14,11 +14,9 @@ NS_LOG_COMPONENT_DEFINE ("CBR Simulation");
 
 void simulateCBR(NodeContainer &nodes, OnOffHelper &onOff, uint64_t start_time, uint64_t stop_time)
 {
-  // uint64_t start_time = 200;
-  // uint64_t stop_time = 1800;
   onOff.SetAttribute ("DataRate", StringValue ("300Kbps"));
   onOff.SetAttribute ("StartTime", TimeValue (MilliSeconds (start_time)));
-  onOff.SetAttribute ("StartTime", TimeValue (MilliSeconds (stop_time)));
+  onOff.SetAttribute ("StopTime", TimeValue (MilliSeconds (stop_time)));
   ApplicationContainer cbr;
   cbr.Add (onOff.Install (nodes.Get (0)));
 
@@ -69,7 +67,8 @@ int main(int argc, char const *argv[])
   }
 
   // Setup the FTP Conenction
-  Address TxAddress(InetSocketAddress(interfaces.GetAddress(1),10));
+  uint16_t ftpPort = 8080;
+  Address TxAddress(InetSocketAddress(interfaces.GetAddress(1), ftpPort));
   OnOffHelper clientHelper ("ns3::TcpSocketFactory", TxAddress);
   ApplicationContainer ftp = clientHelper.Install (nodes.Get (0));
 
@@ -105,7 +104,6 @@ int main(int argc, char const *argv[])
 
   // Cleanup
   Simulator::Destroy ();
-
 
   printf("Done\n");
 
