@@ -6,7 +6,8 @@
 #include "ns3/applications-module.h"
 #include "ns3/network-module.h"
 #include "ns3/on-off-helper.h"
-// #include "ns3/packet-sink.h"
+#include "ns3/flow-monitor-helper.h"
+#include "ns3/packet-sink-helper.h"
 
 using namespace ns3;
 
@@ -24,6 +25,36 @@ void simulateCBR(NodeContainer &nodes, OnOffHelper &onOff, uint64_t start_time, 
   cbr.Start (MilliSeconds (start_time));
   cbr.Stop (MilliSeconds (stop_time));
 }
+
+bool firstCwnd = true;
+bool firstSshThr = true;
+
+static void
+CwndTracer (uint32_t oldval, uint32_t newval)
+{  printf("YOO2\n");
+
+  if (firstCwnd)
+    {
+      std::cout << "0.0 " << oldval << std::endl;
+      firstCwnd = false;
+    }
+  std::cout << Simulator::Now ().GetSeconds () << " " << newval << std::endl;
+  //cWndValue = newval;
+
+  // if (!firstSshThr)
+  //   {
+  //     std::cout<< Simulator::Now ().GetSeconds () << " " << ssThreshValue << std::endl;
+  //   }
+}
+
+static void
+TraceCwnd ()
+{
+
+ // printf("YOO\n");
+  Config::ConnectWithoutContext ("/NodeList/1/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow", MakeCallback (&CwndTracer));
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -70,10 +101,17 @@ int main(int argc, char const *argv[])
   uint16_t ftpPort = 8080;
   Address TxAddress(InetSocketAddress(interfaces.GetAddress(1), ftpPort));
   OnOffHelper clientHelper ("ns3::TcpSocketFactory", TxAddress);
-  ApplicationContainer ftp = clientHelper.Install (nodes.Get (0));
+  ApplicationContainer ftp_sender = clientHelper.Install (nodes.Get (0));
 
-  ftp.Start (Seconds (0.0));
-  ftp.Stop (Seconds (1.8));
+  ftp_sender.Start (MilliSeconds (10));
+  ftp_sender.Stop (MilliSeconds (1799));
+
+  // Create a packet sink to receive the packets
+  PacketSinkHelper tcp_sink ("ns3::TcpSocketFactory",InetSocketAddress(Ipv4Address::GetAny (), ftpPort));
+  ApplicationContainer ftp_sink = tcp_sink.Install (nodes.Get (1));
+  
+  ftp_sink.Start (MilliSeconds (10));
+  ftp_sink.Stop (MilliSeconds (1799));
 
   // Setup the CBR Connection
   uint16_t cbrPort = 8000;
@@ -85,7 +123,7 @@ int main(int argc, char const *argv[])
 
   // CBR1 :  node 0 -> node 1 : 200 ms - 1800 ms
   simulateCBR(nodes, onOff, 200, 1800);
-  
+
   // CBR2 :  node 0 -> node 1 : 400 ms - 1800 ms
   simulateCBR(nodes, onOff, 400, 1800);
   
@@ -98,10 +136,22 @@ int main(int argc, char const *argv[])
   // CBR5 :  node 0 -> node 1 : 1000 ms - 1600 ms
   simulateCBR(nodes, onOff, 1000, 1600);
 
+  // Create a packet sink to receive the packets
+  PacketSinkHelper udp_sink ("ns3::UdpSocketFactory",InetSocketAddress(Ipv4Address::GetAny (), cbrPort));
+  ApplicationContainer cbr_sink = udp_sink.Install (nodes.Get (1));
+  cbr_sink.Start (MilliSeconds (0));
+  cbr_sink.Stop (MilliSeconds (1800));
+ 
+  Ptr<FlowMonitor> flowMonitor;
+  FlowMonitorHelper flowHelper;
+  flowMonitor = flowHelper.InstallAll();
+
+  Simulator::Schedule (Seconds (0.00001), &TraceCwnd);
   // Start Simulator
   Simulator::Stop(MilliSeconds(1800));
   Simulator::Run ();
 
+  flowMonitor->SerializeToXmlFile("CBR-TCP-Simulation.xml", true, true);
   // Cleanup
   Simulator::Destroy ();
 
@@ -109,3 +159,5 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
+
+
