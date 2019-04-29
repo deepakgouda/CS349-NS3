@@ -231,7 +231,6 @@ int main(int argc, char *argv[])
   pointToPoint.SetDeviceAttribute("DataRate", StringValue("1Mbps"));
   pointToPoint.SetChannelAttribute("Delay", StringValue("10ms"));
   // Set the drop tail queue size as the bandwidth delay product
-  // Config::SetDefault ("ns3::DropTailQueue<Packet>::MaxPackets", ns3::UintegerValue (1250));
   pointToPoint.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("1500B"));
 
   // Connect link with nodes
@@ -291,7 +290,6 @@ int main(int argc, char *argv[])
 
   // OnOffHelper is used to simulate Constant-Bit-Rate traffic
   OnOffHelper onOff("ns3::UdpSocketFactory", InetSocketAddress(interfaces.GetAddress(1), cbrPort));
-  // onOff.SetAttribute("PacketSize", UintegerValue(packetSize));
   onOff.SetAttribute("OnTime",  StringValue("ns3::ConstantRandomVariable[Constant=1]"));
   onOff.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
 
@@ -345,7 +343,6 @@ int main(int argc, char *argv[])
   Simulator::Run();
 
   // Get the stats from Flow Monitor
-  // Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
   std::map<FlowId, FlowMonitor::FlowStats> stats = flowMonitor->GetFlowStats();
   std::cout << std::endl << "Flow monitor output:" << std::endl;
   std::cout << "Tx Packets:   " << stats[1].txPackets << std::endl;
@@ -362,9 +359,6 @@ int main(int argc, char *argv[])
 
   Simulator::Destroy();
   NS_LOG_INFO("Done.");
-
-  // Ptr<PacketSink> sinkptr = DynamicCast<PacketSink>(sinkApps.Get(0));
-  // std::cout << "Total Bytes Received on FTP Channel: " << sinkptr->GetTotalRx() << std::endl;
 
   // Write the data of the packets dropped into file
   std::ofstream fileOutput;
